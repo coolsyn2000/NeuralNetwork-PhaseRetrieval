@@ -23,13 +23,13 @@ print(f"Using {device} device")
 generator = Generator().to(device)
 discriminator = Discriminator().to(device)
 
-opt_disc = torch.optim.Adam(discriminator.parameters(), lr=0.001, betas=(0.5, 0.999), )
+opt_disc = torch.optim.Adam(discriminator.parameters(), lr=0.0001, betas=(0.5, 0.999), )
 opt_gen = torch.optim.Adam(generator.parameters(), lr=0.001, betas=(0.5, 0.999))
 
 g_scaler = torch.cuda.amp.GradScaler()
 d_scaler = torch.cuda.amp.GradScaler()
 
-num_epochs = 20
+num_epochs = 50
 
 loss_history = {
     'Train_GLoss': np.ones(num_epochs),

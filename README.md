@@ -11,7 +11,7 @@ run `python run_predict.py`
 
 ![](./assets/model_prediction.png)
 
-## Usage
+## Train
 
 <b>Test Environment:
 * Python 3.9, Pytorch 2.1, CUDA 11.8
@@ -22,6 +22,8 @@ run `python run_predict.py`
 Just run `python run_train.py` in terminal
 
 Results (generated_images, state_dict() , loss_curve) while training will be saved in `./result/*`
+
+![phase retrieval result during training](./assets/training.gif)
 
 ## Data
 

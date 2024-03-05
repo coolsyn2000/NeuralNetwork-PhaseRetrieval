@@ -19,7 +19,7 @@ class CNNBlock(nn.Module):
 
 
 class Discriminator(nn.Module):
-    def __init__(self, in_channels=1, features=[64, 128, 256, 512]):
+    def __init__(self, in_channels=1, features=[32, 64, 128]):
         super().__init__()
         self.initial = nn.Sequential(
             nn.Conv2d(

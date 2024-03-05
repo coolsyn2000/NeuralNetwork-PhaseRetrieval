@@ -5,15 +5,30 @@ import torch.nn as nn
 class Contracting(nn.Module):
     def __init__(self):
         super().__init__()
-        self.layer1 = nn.Sequential(nn.Conv2d(1, 32, 3, stride=1, padding=1), nn.BatchNorm2d(32), nn.ReLU())
+        self.layer1 = nn.Sequential(nn.Conv2d(1, 32, 3, stride=1, padding=1),
+                                    nn.Conv2d(32, 32, 3, stride=1, padding=1),
+                                    nn.BatchNorm2d(32),
+                                    nn.LeakyReLU(0.2))
 
-        self.layer2 = nn.Sequential(nn.Conv2d(32, 64, 3, stride=1, padding=1), nn.BatchNorm2d(64), nn.ReLU())
+        self.layer2 = nn.Sequential(nn.Conv2d(32, 64, 3, stride=1, padding=1),
+                                    nn.Conv2d(64, 64, 3, stride=1, padding=1),
+                                    nn.BatchNorm2d(64),
+                                    nn.LeakyReLU(0.2))
 
-        self.layer3 = nn.Sequential(nn.Conv2d(64, 128, 3, stride=1, padding=1), nn.BatchNorm2d(128), nn.ReLU())
+        self.layer3 = nn.Sequential(nn.Conv2d(64, 128, 3, stride=1, padding=1),
+                                    nn.Conv2d(128, 128, 3, stride=1, padding=1),
+                                    nn.BatchNorm2d(128),
+                                    nn.LeakyReLU(0.2))
 
-        self.layer4 = nn.Sequential(nn.Conv2d(128, 256, 3, stride=1, padding=1), nn.BatchNorm2d(256), nn.ReLU())
+        self.layer4 = nn.Sequential(nn.Conv2d(128, 256, 3, stride=1, padding=1),
+                                    nn.Conv2d(256, 256, 3, stride=1, padding=1),
+                                    nn.BatchNorm2d(256),
+                                    nn.LeakyReLU(0.2))
 
-        self.layer5 = nn.Sequential(nn.Conv2d(256, 512, 3, stride=1, padding=1), nn.BatchNorm2d(512), nn.ReLU())
+        self.layer5 = nn.Sequential(nn.Conv2d(256, 512, 3, stride=1, padding=1),
+                                    nn.Conv2d(512, 512, 3, stride=1, padding=1),
+                                    nn.BatchNorm2d(512),
+                                    nn.LeakyReLU(0.2))
 
         self.down_sample = nn.MaxPool2d(2, stride=2)
 
@@ -33,13 +48,21 @@ class Expansive(nn.Module):
 
         self.layer1 = nn.Sequential(nn.Conv2d(32, 1, 1, stride=1, padding=0))
 
-        self.layer2 = nn.Sequential(nn.Conv2d(64, 32, 3, stride=1, padding=1), nn.BatchNorm2d(32), nn.ReLU())
+        self.layer2 = nn.Sequential(nn.Conv2d(64, 32, 3, stride=1, padding=1),
+                                    nn.BatchNorm2d(32),
+                                    nn.LeakyReLU(0.2))
 
-        self.layer3 = nn.Sequential(nn.Conv2d(128, 64, 3, stride=1, padding=1), nn.BatchNorm2d(64), nn.ReLU())
+        self.layer3 = nn.Sequential(nn.Conv2d(128, 64, 3, stride=1, padding=1),
+                                    nn.BatchNorm2d(64),
+                                    nn.LeakyReLU(0.2))
 
-        self.layer4 = nn.Sequential(nn.Conv2d(256, 128, 3, stride=1, padding=1), nn.BatchNorm2d(128), nn.ReLU())
+        self.layer4 = nn.Sequential(nn.Conv2d(256, 128, 3, stride=1, padding=1),
+                                    nn.BatchNorm2d(128),
+                                    nn.LeakyReLU(0.2))
 
-        self.layer5 = nn.Sequential(nn.Conv2d(512, 256, 3, stride=1, padding=1), nn.BatchNorm2d(256), nn.ReLU())
+        self.layer5 = nn.Sequential(nn.Conv2d(512, 256, 3, stride=1, padding=1),
+                                    nn.BatchNorm2d(256),
+                                    nn.LeakyReLU(0.2))
 
         self.up_sample_54 = nn.ConvTranspose2d(512, 256, 2, stride=2)
 

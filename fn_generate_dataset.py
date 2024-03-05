@@ -23,8 +23,27 @@ def normalization(data):
 # Process and load MNIST dataset
 class MNISTDataset(Dataset):
     def __init__(self, dataset):
+
+        transform_image = transforms.Compose([
+            # resize image to [128,128]
+            transforms.Resize((128, 128)),
+
+            transforms.ToTensor(),
+        ])
+
+        transform_autocorr = transforms.Compose([
+            # pad image to [56,56]
+            transforms.Pad(padding=14, fill=0, padding_mode='constant'),
+            # resize image to [128,128]
+            transforms.Resize((128, 128)),
+
+            transforms.ToTensor(),
+        ])
+
         self.dataset = dataset
-        self.transform = transforms.ToTensor()
+
+        self.transform_image = transform_image
+        self.transform_autocorr = transform_autocorr
 
     def __len__(self):
         return len(self.dataset)
@@ -32,9 +51,10 @@ class MNISTDataset(Dataset):
     def __getitem__(self, idx):
         # 获取图像及其标签（在这个案例中，标签未使用）
         img, _ = self.dataset[idx]
-
+        img_pad = self.transform_autocorr(img)
+        img = self.transform_image(img)
         # 计算自相关并归一化
-        autocorr = normalization(compute_autocorr(img.numpy())).squeeze()
+        autocorr = normalization(compute_autocorr(img_pad.numpy())).squeeze()
 
         autocorr = autocorr[np.newaxis, :, :]
 
@@ -60,19 +80,13 @@ class AutocorrDataset(Dataset):
 
 
 # Generate autocorr dataset function
-def generate_autocorr_dataset(custom_root_path):
+def generate_autocorr_dataset(custom_root_path,name_dataset="MNIST"):
     os.makedirs(custom_root_path, exist_ok=True)
 
-    transform = transforms.Compose([
-        # pad image to [56,56]
-        transforms.Pad(padding=14, fill=0, padding_mode='constant'),
-        # resize image to [128,128]
-        transforms.Resize((128, 128)),
-
-        transforms.ToTensor(),
-    ])
-
-    test_dataset = datasets.MNIST(root=custom_root_path, train=False, download=True, transform=transform)
+    if name_dataset == "MNIST":
+        test_dataset = datasets.MNIST(root=custom_root_path, train=False, download=True)
+    if name_dataset == "FashionMNIST":
+        test_dataset = datasets.FashionMNIST(root=custom_root_path, train=False, download=True)
 
     # load and process MNIST_test dataset
     MNIST_autocorr_dataset = MNISTDataset(test_dataset)
@@ -132,4 +146,4 @@ def load_dataset(train_dataset_save_path='./datasets/MNIST_autocorr_train.pt',
 
 
 if __name__ == "__main__":
-    gen_save_dataset()
+    gen_save_dataset(datasets_path='./datasets')
