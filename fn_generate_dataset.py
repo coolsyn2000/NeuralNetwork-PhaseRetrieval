@@ -132,15 +132,15 @@ def gen_save_dataset(datasets_path='./datasets'):
 
 # load MNIST_autocorr dataset
 def load_dataset(train_dataset_save_path='./datasets/MNIST_autocorr_train.pt',
-                 test_dataset_save_path='./datasets/MNIST_autocorr_test.pt'):
+                 test_dataset_save_path='./datasets/MNIST_autocorr_test.pt',batch_size = 64):
     loaded_train_data = torch.load(train_dataset_save_path)
     loaded_test_data = torch.load(test_dataset_save_path)
 
     train_dataset = AutocorrDataset(loaded_train_data)
     test_dataset = AutocorrDataset(loaded_test_data)
 
-    train_dataloader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-    test_dataloader = DataLoader(test_dataset, batch_size=64, shuffle=False)
+    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     return train_dataloader, test_dataloader
 
