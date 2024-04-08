@@ -6,9 +6,8 @@ from tqdm import tqdm
 from fn_loss import psnr, npcc, ssim
 
 
-def train(train_dataloader, test_dataloader, device, epoch, disc, gen, opt_disc, opt_gen, g_scaler, d_scaler,
-          loss_history):
-
+def fn_train_Pix2Pix(train_dataloader, test_dataloader, device, epoch, disc, gen, opt_disc, opt_gen, g_scaler, d_scaler,
+                     loss_history):
     Train_GLoss, Train_DLoss, SSIM_metrics, MAE_metrics, PSNR_metrics = 0.0, 0.0, 0.0, 0.0, 0.0
 
     loop = tqdm(train_dataloader, leave=True)
@@ -95,7 +94,112 @@ def train(train_dataloader, test_dataloader, device, epoch, disc, gen, opt_disc,
     if not os.path.exists('./results/state_dict/'):
         os.mkdir('./results/state_dict/')
 
-    torchvision.utils.save_image(image_torch, f"./results/generated_images/image_epoch_{str(epoch + 1).rjust(2, '0')}.png", nrow=4)
+    torchvision.utils.save_image(image_torch,
+                                 f"./results/generated_images/image_epoch_{str(epoch + 1).rjust(2, '0')}.png", nrow=4)
     torch.save(gen.state_dict(), f"./results/state_dict/epoch_{str(epoch + 1).rjust(2, '0')}.pth")
 
     return loss_history
+
+
+def fn_train_CycleGAN(train_dataloader, test_dataloader, device, epoch, netG_A2B, netG_B2A, netD_A, netD_B
+                      , optimizer_G, optimizer_D_A, optimizer_D_B,netG_A2B_scaler,netG_B2A_scaler,netD_A_scaler,netD_B_scaler):
+    Train_Loss_G, Train_Loss_D_A, Train_Loss_D_B = 0.0, 0.0, 0.0
+    loop = tqdm(train_dataloader, leave=True)
+    for idx, (real_A, real_B) in enumerate(loop):
+
+        real_A = real_A.to(device)
+        real_B = real_B.to(device)
+
+        real = torch.ones_like(real_A)
+        fake = torch.zeros_like(real_A)
+
+        criterion_GAN = torch.nn.MSELoss()
+        criterion_cycle = torch.nn.L1Loss()
+        criterion_identity = torch.nn.L1Loss()
+
+        # Train Discriminator
+        optimizer_G.zero_grad()
+
+        with torch.cuda.amp.autocast():
+            # 身份损失
+            loss_id_A = criterion_identity(netG_B2A(real_A), real_A)
+            loss_id_B = criterion_identity(netG_A2B(real_B), real_B)
+
+            # 对抗损失
+            fake_B = netG_A2B(real_A)
+
+            D_fake_B = netD_B(fake_B)
+            loss_G_A = criterion_GAN(netD_B(D_fake_B), torch.ones_like(D_fake_B))
+            fake_A = netG_B2A(real_B)
+
+            D_fake_A = netD_A(fake_A)
+            loss_G_B = criterion_GAN(netD_A(D_fake_A), torch.ones_like(D_fake_A))
+
+            # 循环一致性损失
+            recovered_A = netG_B2A(fake_B)
+            loss_cycle_A = criterion_cycle(recovered_A, real_A)
+            recovered_B = netG_A2B(fake_A)
+            loss_cycle_B = criterion_cycle(recovered_B, real_B)
+
+        # 总损失
+        loss_G = loss_id_A + loss_id_B + loss_G_A + loss_G_B + loss_cycle_A * 10.0 + loss_cycle_B * 10.0
+        # loss_G.backward()
+        # optimizer_G.step()
+        Train_Loss_G += loss_G.item()
+
+        netG_A2B_scaler.scale(loss_G).backward()
+        netG_A2B_scaler.step(optimizer_G)
+        netG_A2B_scaler.update()
+
+
+        # -----------------------
+        #  训练判别器 D_A 和 D_B
+        # -----------------------
+
+        optimizer_D_A.zero_grad()
+        with torch.cuda.amp.autocast():
+            # 真实图像损失
+            D_real_A = netD_A(real_A)
+
+            loss_D_A_real = criterion_GAN(D_real_A, torch.ones_like(D_real_A))
+            # 假图像损失
+            fake_A = netG_B2A(real_B).detach()
+
+            D_fake_A = netD_A(fake_A)
+            loss_D_A_fake = criterion_GAN(D_fake_A, torch.zeros_like(D_fake_A))
+            # 总损失
+            loss_D_A = (loss_D_A_real + loss_D_A_fake) * 0.5
+
+        Train_Loss_D_A += loss_D_A.item()
+
+        netD_A_scaler.scale(loss_D_A).backward()
+        netD_A_scaler.step(optimizer_D_A)
+        netD_A_scaler.update()
+
+        optimizer_D_B.zero_grad()
+        with torch.cuda.amp.autocast():
+            # 真实图像损失
+            D_real_B = netD_B(real_B)
+            loss_D_B_real = criterion_GAN(D_real_B, torch.ones_like(D_real_B))
+            # 假图像损失
+            fake_B = netG_A2B(real_A).detach()
+
+            D_fake_B = netD_B(fake_B)
+            loss_D_B_fake = criterion_GAN(D_fake_B, torch.zeros_like(D_fake_B))
+            # 总损失
+            loss_D_B = (loss_D_B_real + loss_D_B_fake) * 0.5
+
+        Train_Loss_D_B += loss_D_B.item()
+
+        netD_B_scaler.scale(loss_D_B).backward()
+        netD_B_scaler.step(optimizer_D_B)
+        netD_B_scaler.update()
+
+        if idx % 10 == 0:
+            loop.set_postfix(
+                loss_G=loss_G.item(),
+                loss_D_B=loss_D_B.item(),
+                loss_D_A=loss_D_A.item()
+            )
+
+    print(f"Epoch: {epoch}, Loss_G: {Train_Loss_G}, Loss_D_A: {Train_Loss_D_A}, Loss_D_B: {Train_Loss_D_B}")

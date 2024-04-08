@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 
-
 class Contracting(nn.Module):
     def __init__(self):
         super().__init__()
@@ -106,13 +105,19 @@ class Generator(nn.Module):
         return x
 
 
-def test():
-    x = torch.randn((1, 1, 128, 128))
-    model = Generator()
-    preds = model(x)
-    print(model)
-    print(preds.shape)
+class CNNBlock(nn.Module):
+    def __init__(self, in_channels, out_channels, stride):
+        super(CNNBlock, self).__init__()
+        self.conv = nn.Sequential(
+            nn.Conv2d(
+                in_channels, out_channels, 3, stride, 1,
+            ),
+            nn.BatchNorm2d(out_channels),
+            nn.LeakyReLU(0.2),
+            nn.MaxPool2d(2, stride=2)
+        )
+
+    def forward(self, x):
+        return self.conv(x)
 
 
-if __name__ == "__main__":
-    test()
