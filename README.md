@@ -9,7 +9,7 @@
 
 * Untrained Neural Network
   
-  ![](./assets/unet_architecture.jpg)
+  ![](./assets/untrained_architecture.jpg)
 
 ## Result
 
