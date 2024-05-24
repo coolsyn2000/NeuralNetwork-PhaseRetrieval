@@ -1,6 +1,6 @@
 # PhaseRetrieval-MNIST
 
-[Pytorch] Phase retrieval network based on [Pix2Pix](https://github.com/phillipi/pix2pix) and Untrained Neural Network
+[Pytorch] Phase retrieval network based on [Pix2Pix](https://github.com/phillipi/pix2pix) and [Untrained Neural Network](https://github.com/FeiWang0824/PhysenNet)
 
 ## Architecture
 * Pix2Pix
@@ -20,7 +20,6 @@
 * run `python ./untrained/phase_retrieval.py`
 
   ![](./assets/untrained_result.jpg)
-
 
 ## Train
 
