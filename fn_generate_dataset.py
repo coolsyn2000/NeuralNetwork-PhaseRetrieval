@@ -7,12 +7,32 @@ from torchvision import datasets, transforms
 
 
 # Compute the autocorr of MNIST image
-def compute_autocorr(image):
-    ft = np.fft.fft2(image)
-    autocorr = np.fft.ifft2(np.abs(ft) ** 2)
-    autocorr = abs(np.fft.fftshift(autocorr))
-    return autocorr
+# def compute_autocorr(image):
+#     ft = np.fft.fft2(image)
+#     autocorr = np.fft.ifft2(np.abs(ft) ** 2)
+#     autocorr = abs(np.fft.fftshift(autocorr))
+#     return autocorr
 
+
+def compute_autocorr(image):
+    # 检查输入类型，以决定使用的是NumPy还是PyTorch函数
+    if isinstance(image, np.ndarray):
+        # 使用NumPy进行计算
+        ft = np.fft.fft2(image)
+        autocorr = np.fft.ifft2(np.abs(ft) ** 2)
+        autocorr = np.abs(np.fft.fftshift(autocorr))
+    elif isinstance(image, torch.Tensor):
+        # 确保张量在GPU上
+        image = image.to(device='cuda')
+
+        # 使用PyTorch进行计算
+        ft = torch.fft.fftn(image)
+        autocorr = torch.fft.ifftn(torch.abs(ft) ** 2)
+        autocorr = torch.abs(torch.fft.fftshift(autocorr))
+    else:
+        raise TypeError("Unsupported input type. Expected numpy.ndarray or torch.Tensor")
+
+    return autocorr
 
 # [0,1] minmax
 def normalization(data):

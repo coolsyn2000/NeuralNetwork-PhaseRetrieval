@@ -1,27 +1,36 @@
-# GAN-PhaseRetrieval-MNIST
+# PhaseRetrieval-MNIST
 
-[Pytorch] A data-driven phase retrieval network based on [Pix2Pix](https://github.com/phillipi/pix2pix)
+[Pytorch] Phase retrieval network based on [Pix2Pix](https://github.com/phillipi/pix2pix) and Untrained Neural Network
 
 ## Architecture
+* Pix2Pix
 
-![](./assets/GAN_architecture.png)
+  ![](./assets/GAN_architecture.jpg)
+
+* Untrained Neural Network
+  
+  ![](./assets/unet_architecture.jpg)
 
 ## Result
-run `python run_predict.py`
 
-![](./assets/model_prediction.png)
+* run `python run_predict.py`
+
+  ![](./assets/model_prediction.png)
+
+* run `python ./untrained/phase_retrieval.py`
+
+  ![](./assets/untrained_result.jpg)
+
 
 ## Train
 
-<b>Test Environment:
-* Python 3.9, Pytorch 2.1, CUDA 11.8
+* Test Environment: Python 3.9, Pytorch 2.1, CUDA 11.8
 
-<b>Test Hardware:
-* CPU i7-11800H, GPU Nvidia RTX 3060 Laptop, RAM DDR4 16G
+* Test Hardware: CPU i7-11800H, GPU Nvidia RTX 3060 Laptop, RAM DDR4 16G
 
-Just run `python run_train.py` in terminal
+* For training with MNIST, just run `python run_train.py` in terminal. Results (generated_images, state_dict() , loss_curve) while training will be saved in `./result/*`
 
-Results (generated_images, state_dict() , loss_curve) while training will be saved in `./result/*`
+* For running with untrained method, run `python ./untrained/phase_retrieval.py`.
 
 ![phase retrieval result during training](./assets/training.gif)
 
