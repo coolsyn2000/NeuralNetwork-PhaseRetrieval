@@ -53,7 +53,7 @@ def test_from_sample():
     net = Generator()
     net.load_state_dict(torch.load('./assets/GAN-PhaseRetrieval-MNIST_pretrained.pth'))
 
-    sample = torch.load('test_autocorr_4.pt')
+    sample = torch.load('./assets/test_autocorr_4.pt')
 
     with torch.no_grad():
         image_fake = net(sample)
