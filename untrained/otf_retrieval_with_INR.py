@@ -6,7 +6,7 @@ import torch
 
 from fn_loss import *
 
-from model.SIREN import Unet, MLPToCNN
+from model.SIREN import Unet, MLPToCNN, Siren
 
 from scipy.ndimage import zoom
 from PIL import Image
@@ -62,12 +62,22 @@ def read_bmp_images_from_folder(folder_path):
     return image_array_list, image_torch_list
 
 
+def get_mgrid(sidelen, dim=2):
+    '''Generates a flattened grid of (x,y,...) coordinates in a range of -1 to 1.
+    sidelen: int
+    dim: int'''
+    tensors = tuple(dim * [torch.linspace(-1, 1, steps=sidelen)])
+    mgrid = torch.stack(torch.meshgrid(*tensors), dim=-1)
+    mgrid = mgrid.reshape(-1, dim)
+    return mgrid
+
+
 def test():
-    seed=666
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    np.random.seed(seed)
-    torch.backends.cudnn.deterministic = True
+    # seed=666
+    # torch.manual_seed(seed)
+    # torch.cuda.manual_seed_all(seed)
+    # np.random.seed(seed)
+    # torch.backends.cudnn.deterministic = True
 
     # 创建一个大小为 128x128 的全零张量
     tensor = torch.zeros(256, 256)
@@ -104,24 +114,27 @@ def test():
     speckle_torch_list = [tensor.to(device) for tensor in speckle_torch_list]
 
     speckle_ft = [torch.abs(torch.fft.fft2(tensor)) for tensor in speckle_torch_list]
+
+    coords = get_mgrid(256, 2).to(device)
+
+
     speckle_pha = [torch.angle(torch.fft.fft2(tensor)) for tensor in speckle_torch_list]
     tensor = tensor.to(device)
-    num_epochs = 3000
-    model = MLPToCNN().to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    num_epochs = 1000
+    model = Siren(in_features=2, out_features=1, hidden_features=256,
+                  hidden_layers=3, outermost_linear=True).to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 
     criterion = torch.nn.MSELoss()
     running_loss = 0.0
-
-    all_one_tensor_gpu = torch.ones_like(speckle_torch_list[0]).to(device)
-
+    losses=[]
     for epoch in range(num_epochs):
         #for i in range(len(speckle_torch_list)):
         # outputs = model(all_one_tensor_gpu)
-        outputs = model(torch.tensor([[1.0]]).to(device))
+        outputs,coords_out = model(coords)
         loss=0.0
         for i in range(1):
-            obj_pha = speckle_pha[i] - outputs
+            obj_pha = speckle_pha[i] - outputs.view(256,256)
             obj = torch.real(torch.fft.ifft2((speckle_ft[i] * torch.exp(1j * obj_pha))))
             obj = obj * tensor
             obj[obj < 0] = 0
@@ -132,6 +145,8 @@ def test():
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+
+        losses.append(loss.item())
 
         if (epoch + 1) % (num_epochs / 10) == 0:
             print('epoch_loss: ', loss.item())
@@ -153,8 +168,8 @@ def test():
     end_index_h = start_index_h + supp_size_h  # 这将是 96
 
     for i in range(len(speckle_torch_list)):
-        outputs = model(torch.tensor([[1.0]]).to(device))
-        obj_pha = speckle_pha[i] - outputs
+        outputs,_ = model(coords)
+        obj_pha = speckle_pha[i] - outputs.view(256,256)
         obj_pha[obj_pha<-torch.pi] = obj_pha[obj_pha < -torch.pi]+2*torch.pi
         obj_pha[obj_pha > torch.pi] = obj_pha[obj_pha > torch.pi] - 2 * torch.pi
         obj = torch.real(torch.fft.ifft2((speckle_ft[i] * torch.exp(1j * obj_pha))))
@@ -169,19 +184,27 @@ def test():
         img= ax.imshow(matrix[start_index_h:end_index_h, start_index_w:end_index_w], cmap='gray')  # 使用灰度颜色映射
         ax.axis('off')  # 隐藏坐标轴
         cbar = plt.colorbar(img, ax=ax, orientation='vertical')
-
     plt.tight_layout()
-    plt.title('Speckle reconstructed by OTF')
-    plt.savefig('../assets/OTF_INR_result.png', transparent=True)
+    plt.title('Reconstructed Images')
+    plt.savefig('./OTF_INR_Reconstructed_Images.png', transparent=True)
     plt.show()
 
-    plt.imshow(torch.fft.ifftshift(outputs).squeeze().cpu().detach().numpy())
+    plt.imshow(torch.fft.ifftshift((outputs.view(256,256))).squeeze().cpu().detach().numpy())
     plt.colorbar()
     plt.tight_layout()
-    plt.title('Phase map of OTF')
-    plt.savefig('../assets/OTF_INR.png', transparent=True)
+    plt.title('PhaseMap of OTF')
+    plt.savefig('./OTF_INR_PhaseMap.png', transparent=True)
     plt.show()
 
+    #plt.figure(figsize=(10, 5))
+    plt.tight_layout()
+    plt.plot(losses, label='Loss', color='blue')
+    plt.title('Training Loss Over Epochs')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.savefig('./OTF_INR_Loss.png', transparent=True)
+    plt.show()
 
 if __name__ == "__main__":
     test()

@@ -131,11 +131,10 @@ def run_phase_retrieval(data_path, model_input):
     plt.imshow(outputs_show, cmap='gray')
     plt.colorbar()
     plt.tight_layout()
-    plt.savefig('../assets/single_shot_untrained_phase_retrieval.png', transparent=True)
+    plt.savefig('../single_shot_untrained_phase_retrieval.png', transparent=True)
     plt.show()
 
 
 if __name__ == "__main__":
     run_phase_retrieval('../assets/2_speckle.bmp',model_input='speckle')
 
-    #run_phase_retrieval('./TEST.png', model_input='autocorr')
